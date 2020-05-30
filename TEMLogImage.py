@@ -120,7 +120,7 @@ class PolygonInteractor(object):
         print(x, y)
         self.xy[self._ind] = x, y
         self.line.set_data(zip(*self.xy))
-        profileLine = profile_line(plotData, self.xy[0], self.xy[1])
+        profileLine = profile_line(plotData, (self.xy[0][1], self.xy[0][0]), (self.xy[1][1], self.xy[1][0]))
         self.profileLine.set_xdata(np.arange(len(profileLine)))
         self.profileLine.set_ydata(profileLine)
         self.canvas.restore_region(self.background)
