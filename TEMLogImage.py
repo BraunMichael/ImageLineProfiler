@@ -123,6 +123,8 @@ class PolygonInteractor(object):
         profileLine = profile_line(plotData, (self.xy[0][1], self.xy[0][0]), (self.xy[1][1], self.xy[1][0]))
         self.profileLine.set_xdata(np.arange(len(profileLine)))
         self.profileLine.set_ydata(profileLine)
+        self.profileax.set_xlim(0, len(profileLine))
+        self.profileax.set_ylim(np.min(profileLine), np.max(profileLine))
         self.canvas.restore_region(self.background)
         self.profileLine.figure.canvas.restore_region(self.profileBackground)
         self.ax.draw_artist(self.line)
