@@ -11,6 +11,7 @@ from PIL import Image
 from ncempy.io import dm
 from matplotlib.lines import Line2D
 from matplotlib.artist import Artist
+from skimage.measure import profile_line
 
 
 def dist_point_to_segment(p, s0, s1):
@@ -44,9 +45,12 @@ def dist_point_to_segment(p, s0, s1):
 class PolygonInteractor(object):
     epsilon = 10  # max pixel distance to count as a vertex hit
 
-    def __init__(self, ax, startPoint, endPoint):
+    def __init__(self, ax, profileax, profileLine, startPoint=(0, 0), endPoint=(1, 1)):
         self.ax = ax
+        self.profileLine = profileLine
+        self.profileax = profileax
         canvas = ax.figure.canvas
+
         x = [startPoint[0], endPoint[0]]
         y = [startPoint[1], endPoint[1]]
         self.xy = [(x, y) for x, y in zip(x, y)]
@@ -64,6 +68,7 @@ class PolygonInteractor(object):
 
     def draw_callback(self, event):
         self.background = self.canvas.copy_from_bbox(self.ax.bbox)
+        self.profileBackground = self.profileLine.figure.canvas.copy_from_bbox(self.profileax.bbox)
         self.ax.draw_artist(self.line)
         self.canvas.blit(self.ax.bbox)
 
@@ -115,9 +120,17 @@ class PolygonInteractor(object):
         print(x, y)
         self.xy[self._ind] = x, y
         self.line.set_data(zip(*self.xy))
+        profileLine = profile_line(plotData, self.xy[0], self.xy[1])
+        self.profileLine.set_xdata(np.arange(len(profileLine)))
+        self.profileLine.set_ydata(profileLine)
         self.canvas.restore_region(self.background)
+        self.profileLine.figure.canvas.restore_region(self.profileBackground)
         self.ax.draw_artist(self.line)
+        self.profileax.draw_artist(self.profileLine)
         self.canvas.blit(self.ax.bbox)
+        self.profileLine.figure.canvas.blit(self.profileax.bbox)
+
+
 
 # dmData = dm.dmReader('16 mW_ follows crystal 2_SADA 2_measured.dm3')
 dmData = dm.dmReader('16 mW_ follows crystal 2_SADA 2(1).dm3')
@@ -127,5 +140,6 @@ fig, axs = plt.subplots(figsize=(8, 8), nrows=1, ncols=2)
 nonlogData = dmData['data']+abs(np.min(dmData['data']))+0.000000000000
 plotData = np.log10(nonlogData)
 axs[0].imshow(plotData, interpolation='none')
-p = PolygonInteractor(axs[0], startPoint, endPoint)
+profileLine = axs[1].plot(profile_line(plotData, startPoint, endPoint))[0]
+p = PolygonInteractor(axs[0], axs[1], profileLine, startPoint, endPoint)
 plt.show()
