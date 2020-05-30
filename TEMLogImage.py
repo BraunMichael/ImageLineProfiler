@@ -45,8 +45,9 @@ def dist_point_to_segment(p, s0, s1):
 class PolygonInteractor(object):
     epsilon = 10  # max pixel distance to count as a vertex hit
 
-    def __init__(self, ax, profileax, profileLine, startPoint=(0, 0), endPoint=(1, 1)):
+    def __init__(self, fig, ax, profileax, profileLine, profileLineWidth=1, startPoint=(0, 0), endPoint=(1, 1)):
         self.ax = ax
+        self.fig = fig
         self.profileLine = profileLine
         self.profileax = profileax
         canvas = ax.figure.canvas
@@ -56,6 +57,7 @@ class PolygonInteractor(object):
         self.xy = [(x, y) for x, y in zip(x, y)]
         self.line = Line2D(x, y, marker='o', markerfacecolor='r', animated=True)
         self.ax.add_line(self.line)
+        self.profileLineWidth = profileLineWidth
 
         cid = self.line.add_callback(self.poly_changed)
         self._ind = None  # the active vertex
@@ -131,6 +133,8 @@ class PolygonInteractor(object):
         self.profileax.draw_artist(self.profileLine)
         self.canvas.blit(self.ax.bbox)
         self.profileLine.figure.canvas.blit(self.profileax.bbox)
+        self.fig.canvas.draw()
+        # self.fig.canvas.flush_events()
 
 
 
@@ -142,6 +146,7 @@ fig, axs = plt.subplots(figsize=(8, 8), nrows=1, ncols=2)
 nonlogData = dmData['data']+abs(np.min(dmData['data']))+0.000000000000
 plotData = np.log10(nonlogData)
 axs[0].imshow(plotData, interpolation='none')
-profileLine = axs[1].plot(profile_line(plotData, startPoint, endPoint))[0]
-p = PolygonInteractor(axs[0], axs[1], profileLine, startPoint, endPoint)
+profileLineWidth = 3
+profileLine = axs[1].plot(profile_line(plotData, startPoint, endPoint, linewidth=profileLineWidth))[0]
+p = PolygonInteractor(fig, axs[0], axs[1], profileLine, profileLineWidth, startPoint, endPoint)
 plt.show()
