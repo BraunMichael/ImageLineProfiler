@@ -121,9 +121,7 @@ class PolygonInteractor(object):
         self.profileLine.set_ydata(profileLine)
         self.profileax.set_xlim(0, len(profileLine))
         self.profileax.set_ylim(np.min(profileLine), np.max(profileLine))
-        self.fig.canvas.flush_events()
         self.fig.canvas.draw()
-        self.ax.draw_artist(self.line)
         self.fig.canvas.flush_events()
 
 
