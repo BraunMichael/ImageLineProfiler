@@ -59,7 +59,6 @@ class PolygonInteractor(object):
         self.ax.add_line(self.line)
         self.profileLineWidth = profileLineWidth
 
-        cid = self.line.add_callback(self.poly_changed)
         self._ind = None  # the active vertex
 
         canvas.mpl_connect('draw_event', self.draw_callback)
@@ -68,19 +67,12 @@ class PolygonInteractor(object):
         canvas.mpl_connect('motion_notify_event', self.motion_notify_callback)
         self.canvas = canvas
 
-    def draw_callback(self, event):
-        # self.background = self.canvas.copy_from_bbox(self.ax.bbox)
-        # self.profileBackground = self.profileLine.figure.canvas.copy_from_bbox(self.profileax.bbox)
-        self.ax.draw_artist(self.line)
-        self.canvas.blit(self.ax.bbox)
-        self.fig.canvas.flush_events()
 
-    def poly_changed(self, poly):
-        """this method is called whenever the polygon object is called"""
-        # only copy the artist props to the line (except visibility)
-        # vis = self.line.get_visible()
-        # Artist.update_from(self.line, poly)
-        # self.line.set_visible(vis)  # don't use the poly visibility state
+    # @profile
+    def draw_callback(self, event):
+        self.ax.draw_artist(self.line)
+        self.fig.canvas.flush_events()
+        print('still got here...')
 
     def get_ind_under_point(self, event):
         """get the index of the vertex under point if within epsilon tolerance"""
@@ -111,6 +103,7 @@ class PolygonInteractor(object):
             return
         self._ind = None
 
+    # @profile
     def motion_notify_callback(self, event):
         """on mouse movement"""
         if self._ind is None:
@@ -120,28 +113,18 @@ class PolygonInteractor(object):
         if event.button != 1:
             return
         x, y = event.xdata, event.ydata
-        # print(x, y)
+        print(x, y)
         self.xy[self._ind] = x, y
         self.line.set_data(zip(*self.xy))
-        profileLine = profile_line(plotData, (self.xy[0][1], self.xy[0][0]), (self.xy[1][1], self.xy[1][0]))
+        profileLine = profile_line(plotData, (self.xy[0][1], self.xy[0][0]), (self.xy[1][1], self.xy[1][0]), linewidth=self.profileLineWidth)
         self.profileLine.set_xdata(np.arange(len(profileLine)))
         self.profileLine.set_ydata(profileLine)
-        # self.profileax.clear()
-        # self.profileax.plot(profileLine)
         self.profileax.set_xlim(0, len(profileLine))
         self.profileax.set_ylim(np.min(profileLine), np.max(profileLine))
-        self.ax.draw_artist(self.line)
-        self.canvas.blit(self.ax.bbox)
         self.fig.canvas.flush_events()
         self.fig.canvas.draw()
-        # self.canvas.restore_region(self.background)
-        # self.profileLine.figure.canvas.restore_region(self.profileBackground)
-        # self.ax.draw_artist(self.line)
-        # self.profileax.draw_artist(self.profileLine)
-        # self.canvas.blit(self.ax.bbox)
-        # self.profileLine.figure.canvas.blit(self.profileax.bbox)
-        # self.fig.canvas.flush_events()
-        # plt.show(block=False)
+        self.ax.draw_artist(self.line)
+        self.fig.canvas.flush_events()
 
 
 
