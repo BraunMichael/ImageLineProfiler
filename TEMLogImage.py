@@ -45,11 +45,12 @@ def dist_point_to_segment(p, s0, s1):
 class PolygonInteractor(object):
     epsilon = 10  # max pixel distance to count as a vertex hit
 
-    def __init__(self, fig, ax, profileax, profileLine, profileLineWidth=1, startPoint=(0, 0), endPoint=(1, 1)):
+    def __init__(self, fig, ax, profileax, profileLine, profileLineWidth=1, startPoint=(0, 0), endPoint=(1, 1), pixelScale=1):
         self.ax = ax
         self.fig = fig
         self.profileLine = profileLine
         self.profileax = profileax
+        self.pixelScale = pixelScale
         canvas = ax.figure.canvas
 
         x = [startPoint[0], endPoint[0]]
@@ -114,25 +115,33 @@ class PolygonInteractor(object):
         # print(x, y)
         self.xy[self._ind] = x, y
         self.line.set_data(zip(*self.xy))
-        profileLine = profile_line(plotData, (self.xy[0][1], self.xy[0][0]), (self.xy[1][1], self.xy[1][0]), linewidth=self.profileLineWidth)
-        self.profileLine.set_xdata(np.arange(len(profileLine)))
-        self.profileLine.set_ydata(profileLine)
-        self.profileax.set_xlim(0, len(profileLine))
-        self.profileax.set_ylim(np.min(profileLine), np.max(profileLine))
+        profileLineData = profile_line(plotData, (self.xy[0][1], self.xy[0][0]), (self.xy[1][1], self.xy[1][0]), linewidth=self.profileLineWidth)
+        self.profileLine.set_xdata(pixelScale * np.arange(profileLineData.size))
+        self.profileLine.set_ydata(profileLineData)
+        self.profileax.set_xlim(0, pixelScale*profileLineData.size)
+        self.profileax.set_ylim(np.min(profileLineData), np.max(profileLineData))
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
 
-
+useCenterDistanceCoords = True  # Assumes center is global max
 dmData = dm.dmReader('power removed_ heated to 60C_ SADA 2(1).dm3')
 # dmData = dm.dmReader('16 mW_ follows crystal 2_SADA 2(1).dm3')
 startPoint = (20, 20)
-endPoint = (1000, 1000)
+endPoint = (1000, 2000)
 fig, axs = plt.subplots(figsize=(8, 8), nrows=1, ncols=2)
 nonlogData = dmData['data']+abs(np.min(dmData['data']))+0.000000000000
 plotData = np.log10(nonlogData)
-axs[0].imshow(plotData, interpolation='none')
+centerX, centerY = np.unravel_index(np.argmax(plotData, axis=None), plotData.shape)
+axs[0].imshow(plotData, interpolation='none', origin='lower')
 profileLineWidth = 3
-profileLine = axs[1].plot(profile_line(plotData, startPoint, endPoint, linewidth=profileLineWidth))[0]
-p = PolygonInteractor(fig, axs[0], axs[1], profileLine, profileLineWidth, startPoint, endPoint)
+profileLineData = profile_line(plotData, startPoint, endPoint, linewidth=profileLineWidth)
+offsetStartPoint = (startPoint[0]-centerX, startPoint[1]-centerY)
+offsetEndPoint = (endPoint[0]-centerX, endPoint[1]-centerY)
+pixelScale = dmData['pixelSize'][0]  # in 1/nm
+# if offsetStartPoint[0] > offsetEndPoint[0]:
+#     offsetStartPoint, offsetEndPoint = offsetEndPoint, offsetStartPoint
+
+profileLine = axs[1].plot(pixelScale*np.arange(profileLineData.size), profileLineData)[0]
+p = PolygonInteractor(fig, axs[0], axs[1], profileLine, profileLineWidth, startPoint, endPoint, pixelScale)
 plt.show()
