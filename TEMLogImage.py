@@ -67,12 +67,10 @@ class PolygonInteractor(object):
         canvas.mpl_connect('motion_notify_event', self.motion_notify_callback)
         self.canvas = canvas
 
-
     # @profile
     def draw_callback(self, event):
         self.ax.draw_artist(self.line)
         self.fig.canvas.flush_events()
-        print('still got here...')
 
     def get_ind_under_point(self, event):
         """get the index of the vertex under point if within epsilon tolerance"""
@@ -113,7 +111,7 @@ class PolygonInteractor(object):
         if event.button != 1:
             return
         x, y = event.xdata, event.ydata
-        print(x, y)
+        # print(x, y)
         self.xy[self._ind] = x, y
         self.line.set_data(zip(*self.xy))
         profileLine = profile_line(plotData, (self.xy[0][1], self.xy[0][0]), (self.xy[1][1], self.xy[1][0]), linewidth=self.profileLineWidth)
@@ -126,8 +124,8 @@ class PolygonInteractor(object):
 
 
 
-# dmData = dm.dmReader('16 mW_ follows crystal 2_SADA 2_measured.dm3')
-dmData = dm.dmReader('16 mW_ follows crystal 2_SADA 2(1).dm3')
+dmData = dm.dmReader('power removed_ heated to 60C_ SADA 2(1).dm3')
+# dmData = dm.dmReader('16 mW_ follows crystal 2_SADA 2(1).dm3')
 startPoint = (20, 20)
 endPoint = (1000, 1000)
 fig, axs = plt.subplots(figsize=(8, 8), nrows=1, ncols=2)
