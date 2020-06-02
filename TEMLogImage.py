@@ -44,6 +44,7 @@ def convertLinePointsToCenteredLinePoints(startPoint, centerCoord):
     endPoint = offsetToOriginalCoords(offsetEndPoint, centerCoord)
     return startPoint, endPoint
 
+
 def dist_point_to_segment(p, s0, s1):
     """
     Get the distance of a point to a segment.
@@ -109,7 +110,6 @@ class PolygonInteractor(object):
         self.ax.figure.canvas.mpl_connect('button_release_event', self.button_release_callback)
         self.ax.figure.canvas.mpl_connect('motion_notify_event', self.motion_notify_callback)
 
-    # @profile
     def draw_callback(self, event):
         self.ax.draw_artist(self.line)
         self.fig.canvas.flush_events()
@@ -152,7 +152,6 @@ class PolygonInteractor(object):
             return
         self._ind = None
 
-    # @profile
     def motion_notify_callback(self, event):
         """on mouse movement"""
         if self._ind is None:
