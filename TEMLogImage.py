@@ -80,15 +80,13 @@ class PolygonInteractor(object):
         self.plotData = plotData
 
         if self.useCenteredLine:
-            startPoint, endPoint = convertLinePointsToCenteredLinePoints(startPoint, self.centerCoord)
+            _, endPoint = convertLinePointsToCenteredLinePoints(startPoint, self.centerCoord)
 
-        x = [startPoint[0], endPoint[0]]
-        y = [startPoint[1], endPoint[1]]
-        self.xy = [(x, y) for x, y in zip(x, y)]
-        self.line = Line2D(x, y, marker='o', markerfacecolor='r', animated=True)
+        self.xy = [startPoint, endPoint]
+        self.line = Line2D(list(zip(*self.xy))[0], list(zip(*self.xy))[1], marker='o', markerfacecolor='r', animated=True)
         self.ax.add_line(self.line)
         self.profileLineWidth = profileLineWidth
-        self.profileLineData = profile_line(self.plotData, startPoint, endPoint, linewidth=self.profileLineWidth)
+        self.profileLineData = profile_line(self.plotData, (self.xy[0][1], self.xy[0][0]), (self.xy[1][1], self.xy[1][0]), linewidth=self.profileLineWidth)
 
         if self.useCenteredLine:
             self.xData = self.pixelScale * (np.arange(self.profileLineData.size) - self.profileLineData.size/2)
