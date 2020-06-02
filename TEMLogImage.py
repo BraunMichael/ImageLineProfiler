@@ -15,6 +15,12 @@ from matplotlib.widgets import Button
 from skimage.measure import profile_line
 
 
+def getNakedNameFromFilePath(name):
+    head, tail = os.path.split(name)
+    nakedName, fileExtension = os.path.splitext(tail)
+    return nakedName
+
+
 def offsetToOriginalCoords(coords, centerCoord, returnType='tuple'):
     assert returnType.lower() == 'numpy' or returnType.lower() == 'tuple', 'Allowed return types are numpy or tuple'
     if returnType.lower() == 'numpy':
@@ -69,7 +75,7 @@ def dist_point_to_segment(p, s0, s1):
 class PolygonInteractor(object):
     epsilon = 10  # max pixel distance to count as a vertex hit
 
-    def __init__(self, fig, ax, profileax, plotData, profileLineWidth=1, startPoint=(0, 0), endPoint=(1, 1), pixelScale=1, useCenteredLine=False, centerCoord=(0, 0), fileName=''):
+    def __init__(self, fig, ax, profileax, plotData, profileLineWidth=1, startPoint=(0, 0), endPoint=(1, 1), pixelScale=1, useCenteredLine=False, centerCoord=(0, 0), fileName='', useLogData=True):
         self.ax = ax
         self.fig = fig
         self.profileax = profileax
@@ -78,6 +84,7 @@ class PolygonInteractor(object):
         self.centerCoord = centerCoord
         self.fileName = fileName
         self.plotData = plotData
+        self.useLogData = useLogData
 
         if self.useCenteredLine:
             _, endPoint = convertLinePointsToCenteredLinePoints(startPoint, self.centerCoord)
@@ -108,8 +115,13 @@ class PolygonInteractor(object):
         self.fig.canvas.flush_events()
 
     def exportData(self, event):
-
-        pass
+        with open(getNakedNameFromFilePath(self.fileName) + '.txt', 'w') as file:
+            if self.useLogData:
+                file.write('%s\t%s\n' % ('Reciprocal Distance (1/nm)', 'Log(Intensity)'))
+            else:
+                file.write('%s\t%s\n' % ('Reciprocal Distance (1/nm)', 'Intensity'))
+            for reciprocalDistance, intensity in zip(self.xData, self.profileLineData):
+                file.write('%s\t%s\n' % (str(reciprocalDistance), str(intensity)))
 
     def get_ind_under_point(self, event):
         """get the index of the vertex under point if within epsilon tolerance"""
@@ -178,7 +190,7 @@ class PolygonInteractor(object):
 
 
 useCenteredLine = True  # Assumes center is global max
-logData = True
+useLogData = True
 fileName = 'power removed_ heated to 60C_ SADA 2(1).dm3'
 # fileName = '16 mW_ follows crystal 2_SADA 2(1).dm3'
 dmData = dm.dmReader(fileName)
@@ -187,13 +199,13 @@ endPoint = (1000, 2000)
 fig, axs = plt.subplots(figsize=(8, 8), nrows=1, ncols=2)
 
 axs[1].set_xlabel('Reciprocal Distance (1/nm)')
-if logData:
+if useLogData:
     axs[1].set_ylabel('Log(Intensity)')
 else:
     ax[1].set_ylabel('Intensity')
 
 nonlogData = dmData['data']+abs(np.min(dmData['data']))
-if logData:
+if useLogData:
     plotData = np.log10(nonlogData)
 else:
     plotData = nonlogData
@@ -203,7 +215,7 @@ axs[0].imshow(plotData, interpolation='none', origin='lower')
 profileLineWidth = 3
 
 pixelScale = dmData['pixelSize'][0]  # in 1/nm
-p = PolygonInteractor(fig, axs[0], axs[1], plotData, profileLineWidth, startPoint, endPoint, pixelScale, useCenteredLine, centerCoord, fileName)
+p = PolygonInteractor(fig, axs[0], axs[1], plotData, profileLineWidth, startPoint, endPoint, pixelScale, useCenteredLine, centerCoord, fileName, useLogData)
 plt.subplots_adjust(bottom=0.15)
 axExport = plt.axes([0.75, 0.02, 0.15, 0.05])
 bExport = Button(axExport, 'Export Data')
