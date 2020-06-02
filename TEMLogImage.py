@@ -139,7 +139,6 @@ class PolygonInteractor(object):
             return
         x, y = event.xdata, event.ydata
         # print(x, y)
-        print(self._ind)
         self.xy[self._ind] = x, y
 
         if self.useCenteredLine:
@@ -167,13 +166,24 @@ class PolygonInteractor(object):
 
 
 useCenteredLine = True  # Assumes center is global max
+logData = True
 dmData = dm.dmReader('power removed_ heated to 60C_ SADA 2(1).dm3')
 # dmData = dm.dmReader('16 mW_ follows crystal 2_SADA 2(1).dm3')
 startPoint = (20, 20)
 endPoint = (1000, 2000)
 fig, axs = plt.subplots(figsize=(8, 8), nrows=1, ncols=2)
+
+axs[1].set_xlabel('Reciprocal Distance (1/nm)')
+if logData:
+    axs[1].set_ylabel('Log(Intensity)')
+else:
+    ax[1].set_ylabel('Intensity')
+
 nonlogData = dmData['data']+abs(np.min(dmData['data']))
-plotData = np.log10(nonlogData)
+if logData:
+    plotData = np.log10(nonlogData)
+else:
+    plotData = nonlogData
 centerRow, centerCol = np.unravel_index(np.argmax(plotData, axis=None), plotData.shape)
 centerCoord = (centerCol, centerRow)
 axs[0].imshow(plotData, interpolation='none', origin='lower')
