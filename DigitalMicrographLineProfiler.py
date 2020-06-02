@@ -74,7 +74,7 @@ def dist_point_to_segment(p, s0, s1):
     return dist(p, pb)
 
 
-class PolygonInteractor(object):
+class LineInteractor(object):
     epsilon = 10  # max pixel distance to count as a vertex hit
 
     def __init__(self, fig, ax, profileax, plotData, startPoint=(0, 0), endPoint=(1, 1), pixelScale=1, centerCoord=(0, 0), setupOptions=None):
@@ -212,7 +212,7 @@ centerCoord = (centerCol, centerRow)
 axs[0].imshow(plotData, interpolation='none', origin='lower')
 
 pixelScale = dmData['pixelSize'][0]  # in 1/nm
-p = PolygonInteractor(fig, axs[0], axs[1], plotData, startPoint, endPoint, pixelScale, centerCoord, setupOptions)
+p = LineInteractor(fig, axs[0], axs[1], plotData, startPoint, endPoint, pixelScale, centerCoord, setupOptions)
 plt.subplots_adjust(bottom=0.15)
 axExport = plt.axes([0.75, 0.02, 0.15, 0.05])
 bExport = Button(axExport, 'Export Data')
