@@ -13,6 +13,7 @@ from matplotlib.lines import Line2D
 from matplotlib.artist import Artist
 from matplotlib.widgets import Button
 from skimage.measure import profile_line
+from DigitalMicrographLineProfilerUI import setupOptionsUI
 
 
 def getNakedNameFromFilePath(name):
@@ -76,16 +77,17 @@ def dist_point_to_segment(p, s0, s1):
 class PolygonInteractor(object):
     epsilon = 10  # max pixel distance to count as a vertex hit
 
-    def __init__(self, fig, ax, profileax, plotData, profileLineWidth=1, startPoint=(0, 0), endPoint=(1, 1), pixelScale=1, useCenteredLine=False, centerCoord=(0, 0), fileName='', useLogData=True):
+    def __init__(self, fig, ax, profileax, plotData, startPoint=(0, 0), endPoint=(1, 1), pixelScale=1, centerCoord=(0, 0), setupOptions=None):
+        assert setupOptions is not None, "You must supply a SetupOptions object"
         self.ax = ax
         self.fig = fig
         self.profileax = profileax
         self.pixelScale = pixelScale
-        self.useCenteredLine = useCenteredLine
+        self.useCenteredLine = setupOptions.useCenteredLine
         self.centerCoord = centerCoord
-        self.fileName = fileName
+        self.fileName = setupOptions.imageFilePath
         self.plotData = plotData
-        self.useLogData = useLogData
+        self.useLogData = setupOptions.useLogData
 
         if self.useCenteredLine:
             _, endPoint = convertLinePointsToCenteredLinePoints(startPoint, self.centerCoord)
@@ -93,7 +95,7 @@ class PolygonInteractor(object):
         self.xy = [startPoint, endPoint]
         self.line = Line2D(list(zip(*self.xy))[0], list(zip(*self.xy))[1], marker='o', markerfacecolor='r', animated=True)
         self.ax.add_line(self.line)
-        self.profileLineWidth = profileLineWidth
+        self.profileLineWidth = setupOptions.profileLineWidth
         self.profileLineData = profile_line(self.plotData, (self.xy[0][1], self.xy[0][0]), (self.xy[1][1], self.xy[1][0]), linewidth=self.profileLineWidth)
 
         if self.useCenteredLine:
@@ -188,33 +190,29 @@ class PolygonInteractor(object):
         self.fig.canvas.flush_events()
 
 
-useCenteredLine = True  # Assumes center is global max
-useLogData = True
-fileName = 'power removed_ heated to 60C_ SADA 2(1).dm3'
-# fileName = '16 mW_ follows crystal 2_SADA 2(1).dm3'
-dmData = dm.dmReader(fileName)
+setupOptions = setupOptionsUI()
+dmData = dm.dmReader(setupOptions.imageFilePath)
 startPoint = (20, 20)
 endPoint = (1000, 2000)
 fig, axs = plt.subplots(figsize=(8, 8), nrows=1, ncols=2)
-fig.canvas.set_window_title(getNakedNameFromFilePath(fileName))
+fig.canvas.set_window_title(getNakedNameFromFilePath(setupOptions.imageFilePath))
 axs[1].set_xlabel('Reciprocal Distance (1/nm)')
-if useLogData:
+if setupOptions.useLogData:
     axs[1].set_ylabel('Log(Intensity)')
 else:
-    ax[1].set_ylabel('Intensity')
+    axs[1].set_ylabel('Intensity')
 
 nonlogData = dmData['data']+abs(np.min(dmData['data']))
-if useLogData:
+if setupOptions.useLogData:
     plotData = np.log10(nonlogData)
 else:
     plotData = nonlogData
 centerRow, centerCol = np.unravel_index(np.argmax(plotData, axis=None), plotData.shape)
 centerCoord = (centerCol, centerRow)
 axs[0].imshow(plotData, interpolation='none', origin='lower')
-profileLineWidth = 3
 
 pixelScale = dmData['pixelSize'][0]  # in 1/nm
-p = PolygonInteractor(fig, axs[0], axs[1], plotData, profileLineWidth, startPoint, endPoint, pixelScale, useCenteredLine, centerCoord, fileName, useLogData)
+p = PolygonInteractor(fig, axs[0], axs[1], plotData, startPoint, endPoint, pixelScale, centerCoord, setupOptions)
 plt.subplots_adjust(bottom=0.15)
 axExport = plt.axes([0.75, 0.02, 0.15, 0.05])
 bExport = Button(axExport, 'Export Data')
