@@ -93,6 +93,8 @@ class PolygonInteractor(object):
         else:
             self.xData = self.pixelScale * np.arange(self.profileLineData.size)
         self.profileLine = axs[1].plot(self.xData, self.profileLineData)[0]
+        self.profileax.autoscale(enable=True, axis='x', tight=True)
+        self.profileax.autoscale(enable=True, axis='y', tight=True)
 
         self._ind = None  # the active vertex
         self.ax.figure.canvas.mpl_connect('draw_event', self.draw_callback)
