@@ -11,6 +11,7 @@ from PIL import Image
 from ncempy.io import dm
 from matplotlib.lines import Line2D
 from matplotlib.artist import Artist
+from matplotlib.widgets import Button
 from skimage.measure import profile_line
 
 
@@ -68,13 +69,15 @@ def dist_point_to_segment(p, s0, s1):
 class PolygonInteractor(object):
     epsilon = 10  # max pixel distance to count as a vertex hit
 
-    def __init__(self, fig, ax, profileax, profileLineWidth=1, startPoint=(0, 0), endPoint=(1, 1), pixelScale=1, useCenteredLine=False, centerCoord=(0, 0)):
+    def __init__(self, fig, ax, profileax, plotData, profileLineWidth=1, startPoint=(0, 0), endPoint=(1, 1), pixelScale=1, useCenteredLine=False, centerCoord=(0, 0), fileName=''):
         self.ax = ax
         self.fig = fig
         self.profileax = profileax
         self.pixelScale = pixelScale
         self.useCenteredLine = useCenteredLine
         self.centerCoord = centerCoord
+        self.fileName = fileName
+        self.plotData = plotData
 
         if self.useCenteredLine:
             startPoint, endPoint = convertLinePointsToCenteredLinePoints(startPoint, self.centerCoord)
@@ -85,8 +88,13 @@ class PolygonInteractor(object):
         self.line = Line2D(x, y, marker='o', markerfacecolor='r', animated=True)
         self.ax.add_line(self.line)
         self.profileLineWidth = profileLineWidth
-        profileLineData = profile_line(plotData, startPoint, endPoint, linewidth=self.profileLineWidth)
-        self.profileLine = axs[1].plot(self.pixelScale * np.arange(profileLineData.size), profileLineData)[0]
+        self.profileLineData = profile_line(self.plotData, startPoint, endPoint, linewidth=self.profileLineWidth)
+
+        if self.useCenteredLine:
+            self.xData = self.pixelScale * (np.arange(self.profileLineData.size) - self.profileLineData.size/2)
+        else:
+            self.xData = self.pixelScale * np.arange(self.profileLineData.size)
+        self.profileLine = axs[1].plot(self.xData, self.profileLineData)[0]
 
         self._ind = None  # the active vertex
         self.ax.figure.canvas.mpl_connect('draw_event', self.draw_callback)
@@ -98,6 +106,10 @@ class PolygonInteractor(object):
     def draw_callback(self, event):
         self.ax.draw_artist(self.line)
         self.fig.canvas.flush_events()
+
+    def exportData(self, event):
+
+        pass
 
     def get_ind_under_point(self, event):
         """get the index of the vertex under point if within epsilon tolerance"""
@@ -149,26 +161,27 @@ class PolygonInteractor(object):
                 self.xy[0] = otherPoint
 
         self.line.set_data(zip(*self.xy))
-        profileLineData = profile_line(plotData, (self.xy[0][1], self.xy[0][0]), (self.xy[1][1], self.xy[1][0]), linewidth=self.profileLineWidth)
+        self.profileLineData = profile_line(self.plotData, (self.xy[0][1], self.xy[0][0]), (self.xy[1][1], self.xy[1][0]), linewidth=self.profileLineWidth)
 
         if self.useCenteredLine:
-            xDataLims = (-pixelScale*profileLineData.size/2, pixelScale*profileLineData.size/2)
-            xData = pixelScale * (np.arange(profileLineData.size) - profileLineData.size/2)
+            xDataLims = (-self.pixelScale*self.profileLineData.size/2, self.pixelScale*self.profileLineData.size/2)
+            self.xData = self.pixelScale * (np.arange(self.profileLineData.size) - self.profileLineData.size/2)
         else:
-            xDataLims = (0, pixelScale*profileLineData.size)
-            xData = pixelScale * np.arange(profileLineData.size)
-        self.profileLine.set_xdata(xData)
-        self.profileLine.set_ydata(profileLineData)
+            xDataLims = (0, self.pixelScale*self.profileLineData.size)
+            self.xData = self.pixelScale * np.arange(self.profileLineData.size)
+        self.profileLine.set_xdata(self.xData)
+        self.profileLine.set_ydata(self.profileLineData)
         self.profileax.set_xlim(xDataLims)
-        self.profileax.set_ylim(np.min(profileLineData), np.max(profileLineData))
+        self.profileax.set_ylim(np.min(self.profileLineData), np.max(self.profileLineData))
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
 
 useCenteredLine = True  # Assumes center is global max
 logData = True
-dmData = dm.dmReader('power removed_ heated to 60C_ SADA 2(1).dm3')
-# dmData = dm.dmReader('16 mW_ follows crystal 2_SADA 2(1).dm3')
+fileName = 'power removed_ heated to 60C_ SADA 2(1).dm3'
+# fileName = '16 mW_ follows crystal 2_SADA 2(1).dm3'
+dmData = dm.dmReader(fileName)
 startPoint = (20, 20)
 endPoint = (1000, 2000)
 fig, axs = plt.subplots(figsize=(8, 8), nrows=1, ncols=2)
@@ -190,6 +203,9 @@ axs[0].imshow(plotData, interpolation='none', origin='lower')
 profileLineWidth = 3
 
 pixelScale = dmData['pixelSize'][0]  # in 1/nm
-
-p = PolygonInteractor(fig, axs[0], axs[1], profileLineWidth, startPoint, endPoint, pixelScale, useCenteredLine, centerCoord)
+p = PolygonInteractor(fig, axs[0], axs[1], plotData, profileLineWidth, startPoint, endPoint, pixelScale, useCenteredLine, centerCoord, fileName)
+plt.subplots_adjust(bottom=0.15)
+axExport = plt.axes([0.75, 0.02, 0.15, 0.05])
+bExport = Button(axExport, 'Export Data')
+bExport.on_clicked(p.exportData)
 plt.show()
