@@ -197,7 +197,7 @@ dmData = dm.dmReader(fileName)
 startPoint = (20, 20)
 endPoint = (1000, 2000)
 fig, axs = plt.subplots(figsize=(8, 8), nrows=1, ncols=2)
-
+fig.canvas.set_window_title(getNakedNameFromFilePath(fileName))
 axs[1].set_xlabel('Reciprocal Distance (1/nm)')
 if useLogData:
     axs[1].set_ylabel('Log(Intensity)')
