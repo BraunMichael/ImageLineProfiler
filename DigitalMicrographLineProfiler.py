@@ -7,6 +7,7 @@ from matplotlib import cm
 import matplotlib.path as mpath
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from lmfit import Parameters, minimize
 from PIL import Image
 from ncempy.io import dm
 from matplotlib.lines import Line2D
@@ -14,6 +15,7 @@ from matplotlib.artist import Artist
 from matplotlib.widgets import Button
 from skimage.measure import profile_line
 from DigitalMicrographLineProfilerUI import setupOptionsUI
+
 
 
 def getNakedNameFromFilePath(name):
@@ -44,6 +46,20 @@ def convertLinePointsToCenteredLinePoints(startPoint, centerCoord):
     startPoint = offsetToOriginalCoords(offsetStartPoint, centerCoord)
     endPoint = offsetToOriginalCoords(offsetEndPoint, centerCoord)
     return startPoint, endPoint
+
+
+def gaussian2D(x, y, cen_x, cen_y, sig_x, sig_y, offset):
+    return np.exp(-(((cen_x-x)/sig_x)**2 + ((cen_y-y)/sig_y)**2)/2.0) + offset
+
+
+def residuals(p, x, y, z):
+    height = p["height"].value
+    cen_x = p["centroid_x"].value
+    cen_y = p["centroid_y"].value
+    sigma_x = p["sigma_x"].value
+    sigma_y = p["sigma_y"].value
+    offset = p["background"].value
+    return z - height*gaussian2D(x,y, cen_x, cen_y, sigma_x, sigma_y, offset)
 
 
 def dist_point_to_segment(p, s0, s1):
@@ -77,7 +93,7 @@ def dist_point_to_segment(p, s0, s1):
 class LineInteractor(object):
     epsilon = 10  # max pixel distance to count as a vertex hit
 
-    def __init__(self, fig, ax, profileax, plotData, startPoint=(0, 0), endPoint=(1, 1), pixelScale=1, centerCoord=(0, 0), setupOptions=None):
+    def __init__(self, fig, ax, profileax, plotData, startPoint=(0, 0), endPoint=(1, 1), pixelScale=1, setupOptions=None, centerCoord=(0, 0)):
         assert setupOptions is not None, "You must supply a SetupOptions object"
         self.ax = ax
         self.fig = fig
@@ -204,22 +220,46 @@ def main():
     else:
         axs[1].set_ylabel('Intensity')
 
-nonlogData = dmData['data']+abs(np.min(dmData['data']))
-if setupOptions.useLogData:
-    plotData = np.log10(nonlogData)
-else:
-    plotData = nonlogData
-centerRow, centerCol = np.unravel_index(np.argmax(plotData, axis=None), plotData.shape)
-centerCoord = (centerCol, centerRow)
-axs[0].imshow(plotData, interpolation='none', origin='lower')
+    nonlogData = dmData['data']+abs(np.min(dmData['data']))
+    if setupOptions.useLogData:
+        plotData = np.log10(nonlogData)
+    else:
+        plotData = nonlogData
+    plotData[plotData == -np.inf] = np.median(plotData)
 
-pixelScale = dmData['pixelSize'][0]  # in 1/nm
-p = LineInteractor(fig, axs[0], axs[1], plotData, startPoint, endPoint, pixelScale, centerCoord, setupOptions)
-plt.subplots_adjust(bottom=0.15)
-axExport = plt.axes([0.75, 0.02, 0.15, 0.05])
-bExport = Button(axExport, 'Export Data')
-bExport.on_clicked(p.exportData)
-plt.show()
+    centerRow, centerCol = np.unravel_index(np.argmax(plotData, axis=None), plotData.shape)
+    centerCoord = (centerCol, centerRow)
+
+    if setupOptions.useCenteredLine:
+        print("Maximum xy Center Coord:", centerCoord)
+
+        subArrayHalfWidth = 40
+        fitArrayStartRow = centerRow - subArrayHalfWidth
+        fitArrayEndRow = centerRow + subArrayHalfWidth
+        fitArrayStartCol = centerCol - subArrayHalfWidth
+        fitArrayEndCol = centerCol + subArrayHalfWidth
+        fitArray = plotData[fitArrayStartRow:fitArrayEndRow, fitArrayStartCol:fitArrayEndCol]
+        x, y = np.meshgrid(np.linspace(fitArrayStartCol, fitArrayEndCol-1, abs(fitArrayEndCol-fitArrayStartCol)), np.linspace(fitArrayStartRow, fitArrayEndRow-1, abs(fitArrayEndRow-fitArrayStartRow)))
+
+        initial = Parameters()
+        initial.add("height", value=np.max(plotData)/3)
+        initial.add("centroid_x", value=centerCol)
+        initial.add("centroid_y", value=centerRow)
+        initial.add("sigma_x", value=10.)
+        initial.add("sigma_y", value=10.)
+        initial.add("background", value=np.mean(plotData))
+        fit = minimize(residuals, initial, args=(x, y, fitArray))
+        centerCoord = (fit.params['centroid_x'].value, fit.params['centroid_y'].value)
+        print("Fit xy Center Coord:", centerCoord)
+
+    axs[0].imshow(plotData, interpolation='none', origin='lower')
+    pixelScale = dmData['pixelSize'][0]  # in 1/nm
+    p = LineInteractor(fig, axs[0], axs[1], plotData, startPoint, endPoint, pixelScale, setupOptions, centerCoord)
+    plt.subplots_adjust(bottom=0.15)
+    axExport = plt.axes([0.75, 0.02, 0.15, 0.05])
+    bExport = Button(axExport, 'Export Data')
+    bExport.on_clicked(p.exportData)
+    plt.show()
 
 
 if __name__ == "__main__":
