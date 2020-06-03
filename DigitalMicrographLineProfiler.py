@@ -190,17 +190,19 @@ class LineInteractor(object):
         self.fig.canvas.flush_events()
 
 
-setupOptions = setupOptionsUI()
-dmData = dm.dmReader(setupOptions.imageFilePath)
-startPoint = (20, 20)
-endPoint = (1000, 2000)
-fig, axs = plt.subplots(figsize=(8, 8), nrows=1, ncols=2)
-fig.canvas.set_window_title(getNakedNameFromFilePath(setupOptions.imageFilePath))
-axs[1].set_xlabel('Reciprocal Distance (1/nm)')
-if setupOptions.useLogData:
-    axs[1].set_ylabel('Log(Intensity)')
-else:
-    axs[1].set_ylabel('Intensity')
+# @profile
+def main():
+    setupOptions = setupOptionsUI()
+    dmData = dm.dmReader(setupOptions.imageFilePath)
+    startPoint = (20, 20)
+    endPoint = (1000, 2000)
+    fig, axs = plt.subplots(figsize=(8, 8), nrows=1, ncols=2)
+    fig.canvas.set_window_title(getNakedNameFromFilePath(setupOptions.imageFilePath))
+    axs[1].set_xlabel('Reciprocal Distance (1/nm)')
+    if setupOptions.useLogData:
+        axs[1].set_ylabel('Log(Intensity)')
+    else:
+        axs[1].set_ylabel('Intensity')
 
 nonlogData = dmData['data']+abs(np.min(dmData['data']))
 if setupOptions.useLogData:
@@ -218,3 +220,7 @@ axExport = plt.axes([0.75, 0.02, 0.15, 0.05])
 bExport = Button(axExport, 'Export Data')
 bExport.on_clicked(p.exportData)
 plt.show()
+
+
+if __name__ == "__main__":
+    main()
