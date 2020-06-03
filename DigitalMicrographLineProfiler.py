@@ -102,7 +102,7 @@ class LineInteractor(object):
             self.xData = self.pixelScale * (np.arange(self.profileLineData.size) - self.profileLineData.size/2)
         else:
             self.xData = self.pixelScale * np.arange(self.profileLineData.size)
-        self.profileLine = axs[1].plot(self.xData, self.profileLineData)[0]
+        self.profileLine = profileax.plot(self.xData, self.profileLineData)[0]
         self.profileax.autoscale(enable=True, axis='x', tight=True)
         self.profileax.autoscale(enable=True, axis='y', tight=True)
 
