@@ -238,7 +238,10 @@ def main():
         fitArrayEndRow = centerRow + subArrayHalfWidth
         fitArrayStartCol = centerCol - subArrayHalfWidth
         fitArrayEndCol = centerCol + subArrayHalfWidth
-        fitArray = plotData[fitArrayStartRow:fitArrayEndRow, fitArrayStartCol:fitArrayEndCol]
+        if setupOptions.useLogData:
+            fitArray = np.exp(plotData[fitArrayStartRow:fitArrayEndRow, fitArrayStartCol:fitArrayEndCol])
+        else:
+            fitArray = plotData[fitArrayStartRow:fitArrayEndRow, fitArrayStartCol:fitArrayEndCol]
         x, y = np.meshgrid(np.linspace(fitArrayStartCol, fitArrayEndCol-1, abs(fitArrayEndCol-fitArrayStartCol)), np.linspace(fitArrayStartRow, fitArrayEndRow-1, abs(fitArrayEndRow-fitArrayStartRow)))
 
         initial = Parameters()
