@@ -201,12 +201,12 @@ class LineInteractor(object):
         self.profileLine.set_xdata(self.xData)
         self.profileLine.set_ydata(self.profileLineData)
         self.profileax.set_xlim(xDataLims)
+        # noinspection PyTypeChecker
         self.profileax.set_ylim(np.min(self.profileLineData), np.max(self.profileLineData))
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
 
-# @profile
 def main():
     setupOptions = setupOptionsUI()
     dmData = dm.dmReader(setupOptions.imageFilePath)
