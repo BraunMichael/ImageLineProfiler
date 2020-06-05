@@ -46,14 +46,10 @@ def getFileOrDir(fileOrFolder: str = 'file', titleStr: str = 'Choose a file', fi
 def strToFloat(numberString):
     if numberString:
         charFreeStr = ''.join(ch for ch in numberString if ch.isdigit() or ch == '.' or ch == ',')
-        return float(locale.atof(charFreeStr))
-    return numberString
-
-
-def validStringNumberRange(numberString, minimumValue, maximumValue):
-    if minimumValue <= strToFloat(numberString) <= maximumValue:
-        return True
-    return False
+        if charFreeStr:
+            return float(locale.atof(charFreeStr))
+        return ''
+    return ''
 
 
 def get_file(entryField, entryFieldText, titleMessage, fileFormatsStr):
@@ -110,8 +106,28 @@ def uiInput(win, setupOptions, savedJSONFileName):
     r2useCentered.grid(row=3, column=2)
 
     tkinter.Label(win, text="Profile line averaging width (pixels)").grid(row=4, column=0)
-    profileLineWidthEntry = tkinter.Entry(win, textvariable=profileLineWidthVar, validate='all', validatecommand=lambda: validStringNumberRange(profileLineWidthVar.get(), 1, 1000))
-    profileLineWidthEntry.grid(row=4, column=1)
+    # TODO: Figure out validation
+    # profileLineWidthEntry = tkinter.Entry(win, textvariable=profileLineWidthVar, validate='key', validatecommand=lambda: validStringNumberRange(profileLineWidthVar, 1, 1000))
+    minimumValue = 1
+    maximumValue = 1000
+
+    def onValidate(proposedText):
+        print("input:", proposedText)
+        if proposedText == '':
+            return True
+        if not proposedText.isdecimal():
+            win.bell()
+            return False
+        numberFloat = strToFloat(proposedText)
+        if minimumValue <= numberFloat <= maximumValue:
+            return True
+        win.bell()
+        return False
+
+    validateFunction = (win.register(onValidate), '%P')
+    tkinter.Entry(win, textvariable=profileLineWidthVar, validate='all', validatecommand=validateFunction).grid(row=4, column=1)
+
+    # profileLineWidthEntry = tkinter.Entry(win, textvariable=profileLineWidthVar)
 
     win.protocol("WM_DELETE_WINDOW", lambda: on_closing(win, setupOptions, savedJSONFileName, ImageEntryText, useLogDataVar, useCenteredLineVar, profileLineWidthVar))
     win.mainloop()
