@@ -79,6 +79,25 @@ def on_closing(win, setupOptions, savedJSONFileName, ImageEntryText, useLogDataV
     win.destroy()
 
 
+class TextValidator(object):
+    def __init__(self, tkWindow, minimumProfileWidth, maximumProfileWidth):
+        self.tkWindow = tkWindow
+        self.minimumProfileWidth = minimumProfileWidth
+        self.maximumProfileWidth = maximumProfileWidth
+
+    def profileWidthValidator(self, proposedText):
+        if proposedText == '':
+            return True
+        if not proposedText.isdecimal():
+            self.tkWindow.bell()
+            return False
+        numberFloat = strToFloat(proposedText)
+        if self.minimumProfileWidth <= numberFloat <= self.maximumProfileWidth:
+            return True
+        self.tkWindow.bell()
+        return False
+
+
 def uiInput(win, setupOptions, savedJSONFileName):
     win.title("Spectrum Data Processing Setup UI")
     ImageEntryText = tkinter.StringVar(value=setupOptions.imageFilePath.replace(os.path.expanduser('~'), '~'))
@@ -100,22 +119,9 @@ def uiInput(win, setupOptions, savedJSONFileName):
     tkinter.Radiobutton(win, text="Free", variable=useCenteredLineVar, value=0).grid(row=3, column=2)
 
     tkinter.Label(win, text="Profile line averaging width (pixels)").grid(row=4, column=0)
-    minimumValue = 1
-    maximumValue = 1000
 
-    def onValidate(proposedText):
-        if proposedText == '':
-            return True
-        if not proposedText.isdecimal():
-            win.bell()
-            return False
-        numberFloat = strToFloat(proposedText)
-        if minimumValue <= numberFloat <= maximumValue:
-            return True
-        win.bell()
-        return False
-
-    validateFunction = (win.register(onValidate), '%P')
+    txtValidator = TextValidator(win, 1, 1000)
+    validateFunction = (win.register(txtValidator.profileWidthValidator), '%P')
     tkinter.Entry(win, textvariable=profileLineWidthVar, validate='all', validatecommand=validateFunction).grid(row=4, column=1)
 
     win.protocol("WM_DELETE_WINDOW", lambda: on_closing(win, setupOptions, savedJSONFileName, ImageEntryText, useLogDataVar, useCenteredLineVar, profileLineWidthVar))
