@@ -87,32 +87,23 @@ def uiInput(win, setupOptions, savedJSONFileName):
     profileLineWidthVar = tkinter.StringVar(value=setupOptions.profileLineWidth)
 
     tkinter.Label(win, text="Image File:").grid(row=0, column=0)
-    ImageFileEntry = tkinter.Entry(win, textvariable=ImageEntryText)
+    ImageFileEntry = tkinter.Entry(win, textvariable=ImageEntryText, width=len(setupOptions.imageFilePath.replace(os.path.expanduser('~'), '~')))
     ImageFileEntry.grid(row=1, column=0)
-    ImageFileEntry.config(width=len(setupOptions.imageFilePath.replace(os.path.expanduser('~'), '~')))
-    ImageFileButton = tkinter.Button(win, text='Choose File', command=lambda: get_file(ImageFileEntry, ImageEntryText, 'Choose DM File', '.dm3 .dm4'))
-    ImageFileButton.grid(row=1, column=1)
+    tkinter.Button(win, text='Choose File', command=lambda: get_file(ImageFileEntry, ImageEntryText, 'Choose DM File', '.dm3 .dm4')).grid(row=1, column=1)
 
     tkinter.Label(win, text="Data scaling type").grid(row=2, column=0)
-    r1useLog = tkinter.Radiobutton(win, text="Log", variable=useLogDataVar, value=1)
-    r2useLog = tkinter.Radiobutton(win, text="Linear", variable=useLogDataVar, value=0)
-    r1useLog.grid(row=2, column=1)
-    r2useLog.grid(row=2, column=2)
+    tkinter.Radiobutton(win, text="Log", variable=useLogDataVar, value=1).grid(row=2, column=1)
+    tkinter.Radiobutton(win, text="Linear", variable=useLogDataVar, value=0).grid(row=2, column=2)
 
     tkinter.Label(win, text="Constrain line center to transmitted beam").grid(row=3, column=0)
-    r1useCentered = tkinter.Radiobutton(win, text="Centered", variable=useCenteredLineVar, value=1)
-    r2useCentered = tkinter.Radiobutton(win, text="Free", variable=useCenteredLineVar, value=0)
-    r1useCentered.grid(row=3, column=1)
-    r2useCentered.grid(row=3, column=2)
+    tkinter.Radiobutton(win, text="Centered", variable=useCenteredLineVar, value=1).grid(row=3, column=1)
+    tkinter.Radiobutton(win, text="Free", variable=useCenteredLineVar, value=0).grid(row=3, column=2)
 
     tkinter.Label(win, text="Profile line averaging width (pixels)").grid(row=4, column=0)
-    # TODO: Figure out validation
-    # profileLineWidthEntry = tkinter.Entry(win, textvariable=profileLineWidthVar, validate='key', validatecommand=lambda: validStringNumberRange(profileLineWidthVar, 1, 1000))
     minimumValue = 1
     maximumValue = 1000
 
     def onValidate(proposedText):
-        print("input:", proposedText)
         if proposedText == '':
             return True
         if not proposedText.isdecimal():
@@ -126,8 +117,6 @@ def uiInput(win, setupOptions, savedJSONFileName):
 
     validateFunction = (win.register(onValidate), '%P')
     tkinter.Entry(win, textvariable=profileLineWidthVar, validate='all', validatecommand=validateFunction).grid(row=4, column=1)
-
-    # profileLineWidthEntry = tkinter.Entry(win, textvariable=profileLineWidthVar)
 
     win.protocol("WM_DELETE_WINDOW", lambda: on_closing(win, setupOptions, savedJSONFileName, ImageEntryText, useLogDataVar, useCenteredLineVar, profileLineWidthVar))
     win.mainloop()
