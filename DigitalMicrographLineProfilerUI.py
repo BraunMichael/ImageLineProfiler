@@ -85,17 +85,20 @@ class TextValidator(object):
         self.minimumProfileWidth = minimumProfileWidth
         self.maximumProfileWidth = maximumProfileWidth
 
-    def profileWidthValidator(self, proposedText):
+    def stringNumberRangeValidator(self, proposedText, minimumValue, maximumValue):
         if proposedText == '':
             return True
-        if not proposedText.isdecimal():
+        if not proposedText.replace('.', '', 1).isdigit():
             self.tkWindow.bell()
             return False
         numberFloat = strToFloat(proposedText)
-        if self.minimumProfileWidth <= numberFloat <= self.maximumProfileWidth:
+        if minimumValue <= numberFloat <= maximumValue:
             return True
         self.tkWindow.bell()
         return False
+
+    def profileWidthValidator(self, proposedText):
+        return self.stringNumberRangeValidator(proposedText, self.minimumProfileWidth, self.maximumProfileWidth)
 
 
 def uiInput(win, setupOptions, savedJSONFileName):
